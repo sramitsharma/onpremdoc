@@ -1,100 +1,156 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Separator } from "../components/ui/separator";
 import { getAllDocs, getNeighbors, loadDocById, prefetchById, getCachedComponent } from "../mocks/mock";
+import { KEYBOARD_KEYS, DEFAULT_VALUES } from "../constants";
 
-export default function DocRenderer({ onAskAssistant }) {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const docs = useMemo(() => getAllDocs(), []);
-  const [Comp, setComp] = useState(() => getCachedComponent(id));
-  const [loading, setLoading] = useState(!Comp);
-  const h1Ref = useRef(null);
+const useDocumentData = (id) => {
+  const docs = React.useMemo(() => getAllDocs(), []);
+  const [component, setComponent] = React.useState(() => getCachedComponent(id));
+  const [loading, setLoading] = React.useState(!component);
 
-  // Redirect to first doc if route not found
-  useEffect(() => {
-    const exists = docs.some((d) => d.id === id);
-    if (!exists && docs.length) {
-      navigate(`/docs/${docs[0].id}`, { replace: true });
-    }
-  }, [docs, id, navigate]);
-
-  useEffect(() => {
-    let alive = true;
+  React.useEffect(() => {
+    let isMounted = true;
     setLoading(true);
+    
     loadDocById(id)
-      .then((C) => {
-        if (!alive) return;
-        setComp(() => C);
+      .then((DocComponent) => {
+        if (!isMounted) return;
+        setComponent(() => DocComponent);
         setLoading(false);
-        // Prefetch neighbors for snappy next/prev
+        
         prefetchById(id);
         const neighbors = getNeighbors(id);
         if (neighbors.next) prefetchById(neighbors.next.id);
         if (neighbors.prev) prefetchById(neighbors.prev.id);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        if (isMounted) setLoading(false);
+      });
+    
     return () => {
-      alive = false;
+      isMounted = false;
     };
   }, [id]);
 
-  useEffect(() => {
-    // Focus heading on route change
-    if (h1Ref.current) h1Ref.current.focus();
-    // Keyboard navigation
-    const handler = (e) => {
+  return { docs, component, loading };
+};
+
+const useKeyboardNavigation = (id, navigate) => {
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
       const neighbors = getNeighbors(id);
-      if (e.key === "ArrowRight" || e.key === "]") {
+      
+      if (e.key === KEYBOARD_KEYS.ARROW_RIGHT || e.key === KEYBOARD_KEYS.BRACKET_RIGHT) {
         if (neighbors.next) navigate(`/docs/${neighbors.next.id}`);
-      } else if (e.key === "ArrowLeft" || e.key === "[") {
+      } else if (e.key === KEYBOARD_KEYS.ARROW_LEFT || e.key === KEYBOARD_KEYS.BRACKET_LEFT) {
         if (neighbors.prev) navigate(`/docs/${neighbors.prev.id}`);
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [id, navigate]);
 
-  const neighbors = getNeighbors(id);
-  const currentMeta = docs.find((d) => d.id === id) || docs[0];
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [id, navigate]);
+};
+
+const NavigationButton = React.memo(({ neighbor, onClick, isPrevious }) => (
+  <Button 
+    variant={isPrevious ? "secondary" : "default"}
+    onClick={onClick} 
+    aria-label={`${isPrevious ? 'Previous' : 'Next'}: ${neighbor.title}`}
+    className="transition-all duration-200 hover:scale-105 hover:shadow-sm"
+  >
+    {isPrevious ? `← Prev: ${neighbor.title}` : `Next: ${neighbor.title} →`}
+  </Button>
+));
+
+const DocumentContent = React.memo(({ component, loading }) => {
+  if (loading) {
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  }
+  
+  if (!component) {
+    return <p>Document not found.</p>;
+  }
+  
+  // Use React.createElement to properly render the dynamic component
+  return React.createElement(component);
+});
+
+const DocRenderer = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { docs, component, loading } = useDocumentData(id);
+  const h1Ref = React.useRef(null);
+
+  React.useEffect(() => {
+    const exists = docs.some((doc) => doc.id === id);
+    if (!exists && docs.length) {
+      navigate(`/docs/${docs[0].id}`, { replace: true });
+    }
+  }, [docs, id, navigate]);
+
+  React.useEffect(() => {
+    if (h1Ref.current) h1Ref.current.focus();
+  }, [id]);
+
+  useKeyboardNavigation(id, navigate);
+
+  const neighbors = React.useMemo(() => getNeighbors(id), [id]);
+  const currentMeta = React.useMemo(() => 
+    docs.find((doc) => doc.id === id) || docs[0], 
+    [docs, id]
+  );
+
+  const handlePrevious = React.useCallback(() => {
+    if (neighbors.prev) navigate(`/docs/${neighbors.prev.id}`);
+  }, [neighbors.prev, navigate]);
+
+  const handleNext = React.useCallback(() => {
+    if (neighbors.next) navigate(`/docs/${neighbors.next.id}`);
+  }, [neighbors.next, navigate]);
 
   return (
-    <div className="px-2 md:px-6 lg:px-10">
-      <div className="mx-auto" style={{ maxWidth: "72ch" }}>
+    <div className="px-4 md:px-8">
+      <div className="max-w-6xl mx-auto">
         <div className="mb-6 pt-6">
-          <h1 ref={h1Ref} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">
+          <h1 
+            ref={h1Ref} 
+            tabIndex={-1} 
+            className="text-2xl font-semibold tracking-tight outline-none"
+          >
             {currentMeta?.title || "Document"}
           </h1>
-          <p className="text-muted-foreground text-sm">{currentMeta?.summary}</p>
+          <p className="text-muted-foreground text-sm">
+            {currentMeta?.summary}
+          </p>
         </div>
+        
         <Separator />
+        
         <div className="py-6 min-h-[50vh]">
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : Comp ? (
-            <Comp />
-          ) : (
-            <p>Document not found.</p>
-          )}
+          <DocumentContent component={component} loading={loading} />
         </div>
+        
         <div className="sticky bottom-0 bg-background/80 backdrop-blur border-t border-border py-3">
           <div className="flex items-center justify-between gap-3">
             <div>
               {neighbors.prev && (
-                <Button variant="secondary" onClick={() => navigate(`/docs/${neighbors.prev.id}`)} aria-label={`Previous: ${neighbors.prev.title}`}>
-                  ← Prev: {neighbors.prev.title}
-                </Button>
+                <NavigationButton 
+                  neighbor={neighbors.prev}
+                  onClick={handlePrevious}
+                  isPrevious={true}
+                />
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" onClick={() => onAskAssistant(currentMeta)}>
-                Ask assistant about this page
-              </Button>
               {neighbors.next && (
-                <Button onClick={() => navigate(`/docs/${neighbors.next.id}`)} aria-label={`Next: ${neighbors.next.title}`}>
-                  Next: {neighbors.next.title} →
-                </Button>
+                <NavigationButton 
+                  neighbor={neighbors.next}
+                  onClick={handleNext}
+                  isPrevious={false}
+                />
               )}
             </div>
           </div>
@@ -102,4 +158,6 @@ export default function DocRenderer({ onAskAssistant }) {
       </div>
     </div>
   );
-}
+};
+
+export default DocRenderer;

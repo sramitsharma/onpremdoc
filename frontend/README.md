@@ -1,12 +1,12 @@
-# React Documentation Portal (Frontend Mock)
+# Documentation Portal
 
-This is a production-style React app skeleton for an auto-wired documentation portal. It implements the UX, TOC, Prev/Next navigation, and a floating in-character assistant using frontend-only mock data. Later we can connect a real backend/registry.
+A React application for managing and displaying documentation with table of contents, navigation, and copyable code blocks.
 
-Important: This app currently uses mocks instead of a backend. All auto-scan behavior is simulated in src/mocks/mock.js.
+Important: This app uses mock data for demonstration. All document management is handled in src/mocks/mock.js.
 
-## How to add a new topic (now, with mocks)
+## How to add a new topic
 
-Follow these steps to add a new document to the portal during the mock phase:
+Follow these steps to add a new document to the portal:
 
 1) Open file: src/mocks/mock.js
 2) Locate the docsSeed array
@@ -57,12 +57,7 @@ After saving:
 - Object: headerConfig
 - Update logo path or the six links on the right of the header
 
-## Using the floating assistant (mock)
 
-- Click the Help button in the header or the page action "Ask assistant about this page"
-- The assistant is draggable, resizable, and can be minimized
-- Its position/size are persisted locally
-- Responses are streamed from a mock adapter; no external APIs are called
 
 ## Keyboard & A11y
 
@@ -75,17 +70,17 @@ After saving:
 - REACT_APP_BACKEND_URL is reserved for future backend integration. Do not hardcode URLs; always use the env var.
 - Backend routes must be prefixed with /api (per ingress rules) when we integrate.
 
-## Roadmap to backend integration
+## Future Enhancements
 
-- Replace src/mocks/mock.js registry with a real registry (FastAPI + Mongo or a build-time manifest)
-- Keep the same shape: docs list, grouping, and lazy component loader
-- Wire Assistant to a pluggable adapter service
+- Replace mock data with a real backend registry
+- Add authentication and user management
+- Implement real-time collaboration features
+
 
 ## Troubleshooting
 
 - If TOC or navigation looks wrong, confirm the new doc object was appended correctly and the id is unique
 - Check the browser console for errors
-- In this environment, backend logs: /var/log/supervisor/backend.*.log
 
 ## Scripts (via CRA/Craco)
 
