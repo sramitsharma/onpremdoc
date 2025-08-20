@@ -1,54 +1,59 @@
-import { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import axios from "axios";
+import Layout from "./components/Layout";
+import TOC from "./components/TOC";
+import DocRenderer from "./components/DocRenderer";
+import Assistant from "./components/Assistant";
+import { getAllDocs } from "./mocks/mock";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL; // do not hardcode
+const API = BACKEND_URL ? `${BACKEND_URL}/api` : null;
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
+function AppShell() {
+  const docs = useMemo(() => getAllDocs(), []);
+  const firstDocId = docs[0]?.id || "introduction";
+  const [tocCollapsed, setTocCollapsed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("toc_prefs_v1")).collapsed ?? false; } catch { return false; }
+  });
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [contextDoc, setContextDoc] = useState(null);
 
   useEffect(() => {
-    helloWorldApi();
+    // Smoke test to backend hello route if configured
+    async function ping() {
+      if (!API) return;
+      try {
+        const response = await axios.get(`${API}/`);
+        console.log(response.data.message);
+      } catch (e) {
+        console.warn("Backend not reachable yet (expected in mock phase)");
+      }
+    }
+    ping();
   }, []);
 
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
+    <Layout onToggleAssistant={() => setAssistantOpen(true)}>
+      <TOC collapsed={tocCollapsed} setCollapsed={setTocCollapsed}>
+        <Routes>
+          <Route path="/docs/:id" element={<DocRenderer onAskAssistant={(meta) => { setContextDoc(meta); setAssistantOpen(true); }} />} />
+          <Route path="/" element={<Navigate to={`/docs/${firstDocId}`} replace />} />
+          <Route path="*" element={<Navigate to={`/docs/${firstDocId}`} replace />} />
+        </Routes>
+      </TOC>
+      <Assistant open={assistantOpen} onClose={() => setAssistantOpen(false)} contextDoc={contextDoc} />
+    </Layout>
   );
-};
+}
 
-function App() {
+export default function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
+        <AppShell />
       </BrowserRouter>
     </div>
   );
 }
-
-export default App;
