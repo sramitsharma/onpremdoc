@@ -1,70 +1,94 @@
-# Getting Started with Create React App
+# React Documentation Portal (Frontend Mock)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is a production-style React app skeleton for an auto-wired documentation portal. It implements the UX, TOC, Prev/Next navigation, and a floating in-character assistant using frontend-only mock data. Later we can connect a real backend/registry.
 
-## Available Scripts
+Important: This app currently uses mocks instead of a backend. All auto-scan behavior is simulated in src/mocks/mock.js.
 
-In the project directory, you can run:
+## How to add a new topic (now, with mocks)
 
-### `npm start`
+Follow these steps to add a new document to the portal during the mock phase:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1) Open file: src/mocks/mock.js
+2) Locate the docsSeed array
+3) Append a new object with these fields:
+   - id: string (kebab-case route segment)
+   - title: string (display title)
+   - section: string (grouping in the left Contents panel)
+   - order: number (lower shows earlier within the same section)
+   - summary: string (short description used under the H1)
+   - body: () => JSX element (the document content)
+4) Save. The app hot-reloads. The TOC and Prev/Next update automatically.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Example:
 
-### `npm test`
+```js
+// src/mocks/mock.js
+const docsSeed = [
+  // ...existing docs
+  {
+    id: "my-new-page",
+    title: "My New Page",
+    section: "Guides",
+    order: 3,
+    summary: "Short helpful description.",
+    body: () => (
+      <div className="prose prose-invert max-w-none">
+        <h1>My New Page</h1>
+        <p>Write your documentation here.</p>
+        <pre className="bg-neutral-900 p-4 rounded-md overflow-auto"><code>{`yarn start`}</code></pre>
+      </div>
+    ),
+  },
+];
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Conventions:
+- id should be unique and URL-safe (kebab-case recommended)
+- section is used for grouping headers in the TOC (e.g., Getting Started, Guides, Operations)
+- order sorts within a section. If omitted, alphabetical title tiebreaker applies
 
-### `npm run build`
+After saving:
+- The new entry appears in the left Contents list under its section
+- Keyboard navigation ←/→ and sticky Prev/Next show correct neighbor titles
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Where to change header links and logo
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- File: src/mocks/mock.js
+- Object: headerConfig
+- Update logo path or the six links on the right of the header
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Using the floating assistant (mock)
 
-### `npm run eject`
+- Click the Help button in the header or the page action "Ask assistant about this page"
+- The assistant is draggable, resizable, and can be minimized
+- Its position/size are persisted locally
+- Responses are streamed from a mock adapter; no external APIs are called
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Keyboard & A11y
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Navigate documents with ← / → (or [ / ])
+- Active TOC item is highlighted and uses aria-current="page"
+- Skip link available to jump to main content
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Environment
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- REACT_APP_BACKEND_URL is reserved for future backend integration. Do not hardcode URLs; always use the env var.
+- Backend routes must be prefixed with /api (per ingress rules) when we integrate.
 
-## Learn More
+## Roadmap to backend integration
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Replace src/mocks/mock.js registry with a real registry (FastAPI + Mongo or a build-time manifest)
+- Keep the same shape: docs list, grouping, and lazy component loader
+- Wire Assistant to a pluggable adapter service
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Troubleshooting
 
-### Code Splitting
+- If TOC or navigation looks wrong, confirm the new doc object was appended correctly and the id is unique
+- Check the browser console for errors
+- In this environment, backend logs: /var/log/supervisor/backend.*.log
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Scripts (via CRA/Craco)
 
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- yarn start: run dev server on http://localhost:3000
+- yarn build: production build
+- yarn test: run tests if present
