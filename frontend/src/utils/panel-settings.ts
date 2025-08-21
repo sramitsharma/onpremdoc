@@ -1,16 +1,21 @@
 import { STORAGE_KEYS, DEFAULT_VALUES } from "../constants";
 
+interface PanelSettings {
+  panelWidth: number;
+  collapsed: boolean;
+}
+
 /**
  * Reset panel settings to default values
  * Useful for clearing old pixel-based values and setting new percentage-based defaults
  */
-export const resetPanelSettings = () => {
+export const resetPanelSettings = (): boolean => {
   try {
     // Clear the old storage key
     localStorage.removeItem(STORAGE_KEYS.TOC_PREFERENCES);
     
     // Set new default values (15% left panel, 85% right panel)
-    const newSettings = {
+    const newSettings: PanelSettings = {
       panelWidth: DEFAULT_VALUES.PANEL_WIDTH, // 15%
       collapsed: false
     };
@@ -28,7 +33,7 @@ export const resetPanelSettings = () => {
 /**
  * Get current panel settings
  */
-export const getPanelSettings = () => {
+export const getPanelSettings = (): PanelSettings | null => {
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.TOC_PREFERENCES);
     return stored ? JSON.parse(stored) : null;
@@ -41,14 +46,14 @@ export const getPanelSettings = () => {
 /**
  * Check if panel settings need migration (old pixel values or old percentage)
  */
-export const needsMigration = () => {
+export const needsMigration = (): boolean => {
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.TOC_PREFERENCES);
     if (!stored) return false;
     
-    const parsed = JSON.parse(stored);
+    const parsed = JSON.parse(stored) as any;
     // Check for old pixel values (>100) or old percentages (30, 12)
-    return parsed.panelWidth && (parsed.panelWidth > 100 || parsed.panelWidth === 30 || parsed.panelWidth === 12);
+    return parsed && typeof parsed === 'object' && parsed.panelWidth && (parsed.panelWidth > 100 || parsed.panelWidth === 30 || parsed.panelWidth === 12);
   } catch (error) {
     return false;
   }

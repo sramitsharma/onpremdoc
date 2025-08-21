@@ -2,7 +2,7 @@ import React from 'react';
 import { CodeBlock, CommandBlock } from '../ui/copyable-blocks';
 import ImageZoom from '../ui/image-zoom';
 
-const Introduction = () => {
+const Introduction: React.FC = () => {
   return (
     <div className="prose prose-invert max-w-none space-y-6">
       <h1>Introduction</h1>

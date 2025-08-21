@@ -2,6 +2,23 @@ import React from "react";
 import { X } from "lucide-react";
 import { KEYBOARD_KEYS } from "../../constants";
 
+interface CloseButtonProps {
+  onClick: () => void;
+}
+
+interface ZoomedImageProps {
+  src: string;
+  alt: string;
+  onClose: () => void;
+  onOverlayClick: (e: React.MouseEvent) => void;
+}
+
+interface ImageZoomProps {
+  src: string;
+  alt: string;
+  className?: string;
+}
+
 const useImageZoom = () => {
   const [isZoomed, setIsZoomed] = React.useState(false);
 
@@ -15,14 +32,14 @@ const useImageZoom = () => {
     document.body.style.overflow = 'unset';
   }, []);
 
-  const handleOverlayClick = React.useCallback((e) => {
+  const handleOverlayClick = React.useCallback((e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       handleClose();
     }
   }, [handleClose]);
 
   React.useEffect(() => {
-    const handleEscKey = (e) => {
+    const handleEscKey = (e: KeyboardEvent) => {
       if (e.key === KEYBOARD_KEYS.ESCAPE && isZoomed) {
         handleClose();
       }
@@ -51,7 +68,7 @@ const useImageZoom = () => {
   };
 };
 
-const CloseButton = React.memo(({ onClick }) => (
+const CloseButton = React.memo<CloseButtonProps>(({ onClick }) => (
   <button
     onClick={onClick}
     className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors duration-200 p-2"
@@ -61,7 +78,7 @@ const CloseButton = React.memo(({ onClick }) => (
   </button>
 ));
 
-const ZoomedImage = React.memo(({ src, alt, onClose, onOverlayClick }) => (
+const ZoomedImage = React.memo<ZoomedImageProps>(({ src, alt, onClose, onOverlayClick }) => (
   <div
     className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300"
     onClick={onOverlayClick}
@@ -77,7 +94,7 @@ const ZoomedImage = React.memo(({ src, alt, onClose, onOverlayClick }) => (
   </div>
 ));
 
-const ImageZoom = ({ src, alt, className = "" }) => {
+const ImageZoom: React.FC<ImageZoomProps> = ({ src, alt, className = "" }) => {
   const { isZoomed, handleImageClick, handleClose, handleOverlayClick } = useImageZoom();
 
   return (

@@ -5,7 +5,7 @@
 /**
  * Safely get item from localStorage
  */
-export const getStorageItem = (key, defaultValue = null) => {
+export const getStorageItem = <T>(key: string, defaultValue: T = null as T): T => {
   try {
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : defaultValue;
@@ -18,7 +18,7 @@ export const getStorageItem = (key, defaultValue = null) => {
 /**
  * Safely set item in localStorage
  */
-export const setStorageItem = (key, value) => {
+export const setStorageItem = <T>(key: string, value: T | ((val: T) => T)): boolean => {
   try {
     const valueToStore = value instanceof Function ? value(getStorageItem(key)) : value;
     localStorage.setItem(key, JSON.stringify(valueToStore));
@@ -32,7 +32,7 @@ export const setStorageItem = (key, value) => {
 /**
  * Safely remove item from localStorage
  */
-export const removeStorageItem = (key) => {
+export const removeStorageItem = (key: string): boolean => {
   try {
     localStorage.removeItem(key);
     return true;
@@ -45,7 +45,7 @@ export const removeStorageItem = (key) => {
 /**
  * Clear all localStorage items
  */
-export const clearStorage = () => {
+export const clearStorage = (): boolean => {
   try {
     localStorage.clear();
     return true;

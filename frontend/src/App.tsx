@@ -10,7 +10,7 @@ import useLocalStorage from "./hooks/use-local-storage";
 import { STORAGE_KEYS } from "./constants";
 
 const useTocState = () => {
-  const [tocCollapsed, setTocCollapsed] = useLocalStorage(
+  const [tocCollapsed, setTocCollapsed] = useLocalStorage<boolean>(
     `${STORAGE_KEYS.TOC_PREFERENCES}.collapsed`, 
     false
   );
@@ -18,7 +18,7 @@ const useTocState = () => {
   return { tocCollapsed, setTocCollapsed };
 };
 
-const AppShell = () => {
+const AppShell: React.FC = () => {
   const docs = React.useMemo(() => getAllDocs(), []);
   const firstDocId = docs[0]?.id || "introduction";
   const { tocCollapsed, setTocCollapsed } = useTocState();
@@ -42,7 +42,7 @@ const AppShell = () => {
   );
 };
 
-const App = () => (
+const App: React.FC = () => (
   <div className="App">
     <BrowserRouter>
       <AppShell />

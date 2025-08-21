@@ -2,10 +2,15 @@ import React from "react";
 import { Copy, Check } from "lucide-react";
 import { ANIMATION_DURATIONS } from "../../constants";
 
+interface CopyButtonProps {
+  content: string;
+  className?: string;
+}
+
 const useCopyToClipboard = () => {
   const [copied, setCopied] = React.useState(false);
 
-  const copyToClipboard = React.useCallback(async (text) => {
+  const copyToClipboard = React.useCallback(async (text: string) => {
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
@@ -31,7 +36,7 @@ const useCopyToClipboard = () => {
   return { copied, copyToClipboard };
 };
 
-const CopyButton = ({ content, className = "" }) => {
+const CopyButton: React.FC<CopyButtonProps> = ({ content, className = "" }) => {
   const { copied, copyToClipboard } = useCopyToClipboard();
 
   const handleClick = React.useCallback(() => {

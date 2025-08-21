@@ -9,8 +9,36 @@ import useLocalStorage from "../hooks/use-local-storage";
 import { STORAGE_KEYS, DEFAULT_VALUES } from "../constants";
 import { resetPanelSettings, getStorageItem, removeStorageItem } from "../utils";
 
+interface Doc {
+  id: string;
+  title: string;
+}
+
+interface NavigationLinkProps {
+  doc: Doc;
+  isActive: boolean;
+}
+
+interface SectionHeaderProps {
+  title: string;
+}
+
+interface CollapseButtonProps {
+  onClick: () => void;
+}
+
+interface ExpandButtonProps {
+  onClick: () => void;
+}
+
+interface TOCProps {
+  collapsed: boolean;
+  setCollapsed: (collapsed: boolean) => void;
+  children: React.ReactNode;
+}
+
 const usePanelState = () => {
-  const [panelWidth, setPanelWidth] = useLocalStorage(
+  const [panelWidth, setPanelWidth] = useLocalStorage<number>(
     `${STORAGE_KEYS.TOC_PREFERENCES}.panelWidth`, 
     DEFAULT_VALUES.PANEL_WIDTH
   );
@@ -18,10 +46,10 @@ const usePanelState = () => {
   // Migration: Convert old pixel values to percentage
   React.useEffect(() => {
     const storedValue = getStorageItem(STORAGE_KEYS.TOC_PREFERENCES);
-    if (storedValue) {
+    if (storedValue && typeof storedValue === 'object' && storedValue !== null) {
       // If the stored value is greater than 100, it's likely the old pixel value
       // Or if it's the old 30% value, or the old 12% value, update to new 15%
-      if (storedValue.panelWidth && (storedValue.panelWidth > 100 || storedValue.panelWidth === 30 || storedValue.panelWidth === 12)) {
+      if ((storedValue as any).panelWidth && ((storedValue as any).panelWidth > 100 || (storedValue as any).panelWidth === 30 || (storedValue as any).panelWidth === 12)) {
         // Convert old pixel value or old percentage to new smaller percentage
         setPanelWidth(DEFAULT_VALUES.PANEL_WIDTH);
         // Clear the old value to force migration
@@ -33,7 +61,7 @@ const usePanelState = () => {
   return { panelWidth, setPanelWidth };
 };
 
-const useFilteredDocs = (query) => {
+const useFilteredDocs = (query: string) => {
   const grouped = React.useMemo(() => getGroupedBySection(), []);
   const sections = React.useMemo(() => Object.keys(grouped), [grouped]);
 
@@ -41,10 +69,10 @@ const useFilteredDocs = (query) => {
     if (!query) return grouped;
     
     const q = query.toLowerCase();
-    const filtered = {};
+    const filtered: Record<string, Doc[]> = {};
     
     for (const section of sections) {
-      const items = grouped[section].filter((doc) => 
+      const items = grouped[section].filter((doc: Doc) => 
         doc.title.toLowerCase().includes(q)
       );
       if (items.length) filtered[section] = items;
@@ -54,7 +82,7 @@ const useFilteredDocs = (query) => {
   }, [grouped, query, sections]);
 };
 
-const NavigationLink = React.memo(({ doc, isActive }) => (
+const NavigationLink = React.memo<NavigationLinkProps>(({ doc, isActive }) => (
   <NavLink
     to={`/docs/${doc.id}`}
     className={({ isActive: linkActive }) =>
@@ -69,13 +97,13 @@ const NavigationLink = React.memo(({ doc, isActive }) => (
   </NavLink>
 ));
 
-const SectionHeader = React.memo(({ title }) => (
+const SectionHeader = React.memo<SectionHeaderProps>(({ title }) => (
   <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-1 px-2">
     {title}
   </h3>
 ));
 
-const CollapseButton = React.memo(({ onClick }) => (
+const CollapseButton = React.memo<CollapseButtonProps>(({ onClick }) => (
   <Button 
     size="sm" 
     variant="ghost" 
@@ -87,7 +115,7 @@ const CollapseButton = React.memo(({ onClick }) => (
   </Button>
 ));
 
-const ExpandButton = React.memo(({ onClick }) => (
+const ExpandButton = React.memo<ExpandButtonProps>(({ onClick }) => (
   <Button
     size="sm"
     variant="ghost"
@@ -99,7 +127,7 @@ const ExpandButton = React.memo(({ onClick }) => (
   </Button>
 ));
 
-const TOC = ({ collapsed, setCollapsed, children }) => {
+const TOC: React.FC<TOCProps> = ({ collapsed, setCollapsed, children }) => {
   const { panelWidth, setPanelWidth } = usePanelState();
   const [query, setQuery] = React.useState("");
   const location = useLocation();
@@ -107,18 +135,18 @@ const TOC = ({ collapsed, setCollapsed, children }) => {
 
   // Add global reset function for debugging
   React.useEffect(() => {
-    window.resetPanelSettings = () => {
+    (window as any).resetPanelSettings = () => {
       console.log('Manually resetting panel settings to 15%');
       resetPanelSettings();
       setPanelWidth(DEFAULT_VALUES.PANEL_WIDTH);
     };
     
     return () => {
-      delete window.resetPanelSettings;
+      delete (window as any).resetPanelSettings;
     };
   }, [setPanelWidth]);
 
-  const handlePanelResize = React.useCallback((width) => {
+  const handlePanelResize = React.useCallback((width: number) => {
     setPanelWidth(width);
   }, [setPanelWidth]);
 
@@ -130,7 +158,7 @@ const TOC = ({ collapsed, setCollapsed, children }) => {
     setCollapsed(false);
   }, [setCollapsed]);
 
-  const handleQueryChange = React.useCallback((e) => {
+  const handleQueryChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
   }, []);
 

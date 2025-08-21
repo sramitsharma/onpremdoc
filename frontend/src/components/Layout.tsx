@@ -3,6 +3,17 @@ import { Link } from "react-router-dom";
 import { Separator } from "../components/ui/separator";
 import { headerConfig } from "../mocks/mock";
 
+interface NavigationLinkProps {
+  link: {
+    label: string;
+    href: string;
+  };
+}
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
 const Logo = React.memo(() => (
   <Link to="/docs/introduction" className="flex items-center gap-2">
     <img 
@@ -16,7 +27,7 @@ const Logo = React.memo(() => (
   </Link>
 ));
 
-const NavigationLink = React.memo(({ link }) => (
+const NavigationLink = React.memo<NavigationLinkProps>(({ link }) => (
   <a 
     key={link.label} 
     href={link.href} 
@@ -53,7 +64,7 @@ const SkipToContent = React.memo(() => (
   </a>
 ));
 
-const Layout = ({ children }) => (
+const Layout: React.FC<LayoutProps> = ({ children }) => (
   <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
     <SkipToContent />
     <Header />

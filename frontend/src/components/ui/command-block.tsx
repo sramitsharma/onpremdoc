@@ -2,12 +2,18 @@ import React from "react";
 import CopyButton from "./copy-button";
 import { Terminal } from "lucide-react";
 
-const useTextContent = (children) => {
+interface CommandBlockProps {
+  children: React.ReactNode;
+  className?: string;
+  [key: string]: any;
+}
+
+const useTextContent = (children: React.ReactNode) => {
   return React.useMemo(() => {
-    const getTextContent = (element) => {
+    const getTextContent = (element: any): string => {
       if (typeof element === 'string') return element;
-      if (React.isValidElement(element) && element.props.children) {
-        return getTextContent(element.props.children);
+      if (React.isValidElement(element) && (element.props as any)?.children) {
+        return getTextContent((element.props as any).children);
       }
       if (Array.isArray(element)) {
         return element.map(getTextContent).join('');
@@ -26,7 +32,7 @@ const CommandHeader = React.memo(() => (
   </div>
 ));
 
-const CommandBlock = ({ children, className = "", ...props }) => {
+const CommandBlock: React.FC<CommandBlockProps> = ({ children, className = "", ...props }) => {
   const content = useTextContent(children);
 
   return (

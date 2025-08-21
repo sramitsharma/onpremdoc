@@ -5,9 +5,36 @@ import { Separator } from "../components/ui/separator";
 import { getAllDocs, getNeighbors, loadDocById, prefetchById, getCachedComponent } from "../mocks/mock";
 import { KEYBOARD_KEYS, DEFAULT_VALUES } from "../constants";
 
-const useDocumentData = (id) => {
+interface Doc {
+  id: string;
+  title: string;
+  summary?: string;
+}
+
+interface Neighbor {
+  id: string;
+  title: string;
+}
+
+interface Neighbors {
+  prev?: Neighbor;
+  next?: Neighbor;
+}
+
+interface NavigationButtonProps {
+  neighbor: Neighbor;
+  onClick: () => void;
+  isPrevious: boolean;
+}
+
+interface DocumentContentProps {
+  component: React.ComponentType | null;
+  loading: boolean;
+}
+
+const useDocumentData = (id: string) => {
   const docs = React.useMemo(() => getAllDocs(), []);
-  const [component, setComponent] = React.useState(() => getCachedComponent(id));
+  const [component, setComponent] = React.useState<React.ComponentType | null>(() => getCachedComponent(id));
   const [loading, setLoading] = React.useState(!component);
 
   React.useEffect(() => {
@@ -37,9 +64,9 @@ const useDocumentData = (id) => {
   return { docs, component, loading };
 };
 
-const useKeyboardNavigation = (id, navigate) => {
+const useKeyboardNavigation = (id: string, navigate: (path: string) => void) => {
   React.useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       const neighbors = getNeighbors(id);
       
       if (e.key === KEYBOARD_KEYS.ARROW_RIGHT || e.key === KEYBOARD_KEYS.BRACKET_RIGHT) {
@@ -54,7 +81,7 @@ const useKeyboardNavigation = (id, navigate) => {
   }, [id, navigate]);
 };
 
-const NavigationButton = React.memo(({ neighbor, onClick, isPrevious }) => (
+const NavigationButton = React.memo<NavigationButtonProps>(({ neighbor, onClick, isPrevious }) => (
   <Button 
     variant={isPrevious ? "secondary" : "default"}
     onClick={onClick} 
@@ -65,7 +92,7 @@ const NavigationButton = React.memo(({ neighbor, onClick, isPrevious }) => (
   </Button>
 ));
 
-const DocumentContent = React.memo(({ component, loading }) => {
+const DocumentContent = React.memo<DocumentContentProps>(({ component, loading }) => {
   if (loading) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
@@ -78,13 +105,14 @@ const DocumentContent = React.memo(({ component, loading }) => {
   return React.createElement(component);
 });
 
-const DocRenderer = () => {
-  const { id } = useParams();
+const DocRenderer: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { docs, component, loading } = useDocumentData(id);
-  const h1Ref = React.useRef(null);
+  const { docs, component, loading } = useDocumentData(id || "");
+  const h1Ref = React.useRef<HTMLHeadingElement>(null);
 
   React.useEffect(() => {
+    if (!id) return;
     const exists = docs.some((doc) => doc.id === id);
     if (!exists && docs.length) {
       navigate(`/docs/${docs[0].id}`, { replace: true });
@@ -95,9 +123,9 @@ const DocRenderer = () => {
     if (h1Ref.current) h1Ref.current.focus();
   }, [id]);
 
-  useKeyboardNavigation(id, navigate);
+  useKeyboardNavigation(id || "", navigate);
 
-  const neighbors = React.useMemo(() => getNeighbors(id), [id]);
+  const neighbors = React.useMemo(() => getNeighbors(id || ""), [id]);
   const currentMeta = React.useMemo(() => 
     docs.find((doc) => doc.id === id) || docs[0], 
     [docs, id]

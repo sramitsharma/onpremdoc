@@ -1,12 +1,19 @@
 import React from "react";
 import CopyButton from "./copy-button";
 
-const useTextContent = (children) => {
+interface CodeBlockProps {
+  children: React.ReactNode;
+  className?: string;
+  language?: string;
+  [key: string]: any;
+}
+
+const useTextContent = (children: React.ReactNode) => {
   return React.useMemo(() => {
-    const getTextContent = (element) => {
+    const getTextContent = (element: any): string => {
       if (typeof element === 'string') return element;
-      if (React.isValidElement(element) && element.props.children) {
-        return getTextContent(element.props.children);
+      if (React.isValidElement(element) && (element.props as any)?.children) {
+        return getTextContent((element.props as any).children);
       }
       if (Array.isArray(element)) {
         return element.map(getTextContent).join('');
@@ -18,7 +25,7 @@ const useTextContent = (children) => {
   }, [children]);
 };
 
-const CodeBlock = ({ children, className = "", language = "text", ...props }) => {
+const CodeBlock: React.FC<CodeBlockProps> = ({ children, className = "", language = "text", ...props }) => {
   const content = useTextContent(children);
 
   return (
